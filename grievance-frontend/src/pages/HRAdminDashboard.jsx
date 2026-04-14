@@ -219,7 +219,7 @@ function HRAdminDashboard() {
       </header>
 
       <nav className="navbar">
-        <ul style={{ display: "flex", gap: "20px", alignItems: "center" }}>
+        <ul>
           <li className="admin-nav-title"><span>HR Department </span></li>
           
           <li 
@@ -253,7 +253,7 @@ function HRAdminDashboard() {
           {msg && <div className={`alert-box ${statusType}`}>{msg}</div>}
 
           {/* ✅ FILTER BAR */}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginBottom: "20px", padding: "15px", background: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+          <div className="filter-bar" style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginBottom: "20px", padding: "15px", background: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
             <input
               type="text" placeholder="Search Student ID..."
               value={searchId} onChange={(e) => setSearchId(e.target.value)}
@@ -290,6 +290,7 @@ function HRAdminDashboard() {
               <p>{grievances.length === 0 ? "No grievances found." : "No grievances match your filters."}</p>
             </div>
           ) : (
+            <div className="table-container">
             <table className="grievance-table">
               <thead>
                 <tr>
@@ -369,6 +370,7 @@ function HRAdminDashboard() {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
         ) : (

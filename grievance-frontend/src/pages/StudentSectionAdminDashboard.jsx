@@ -219,7 +219,7 @@ function StudentSectionAdminDashboard() {
           {msg && <div className={`alert-box ${statusType}`}>{msg}</div>}
 
           {/* ✅ FILTER BAR */}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginBottom: "20px", padding: "15px", background: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+          <div className="filter-bar" style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginBottom: "20px", padding: "15px", background: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
             <input
               type="text" placeholder="Search Student ID..."
               value={searchId} onChange={(e) => setSearchId(e.target.value)}

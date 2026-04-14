@@ -496,7 +496,7 @@ function StudentDashboard() {
             <h2>Recent Activity</h2>
 
             {/* ✅ FILTER BAR */}
-            <div className="mobile-filter-bar" style={{
+            <div className="mobile-filter-bar filter-bar" style={{
               display: "flex", flexWrap: "wrap", gap: "10px", marginBottom: "20px",
               padding: "15px", background: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0"
             }}>

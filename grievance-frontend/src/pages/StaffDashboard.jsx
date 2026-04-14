@@ -425,7 +425,7 @@ function StaffDashboard() {
               <p>These are grievances you have submitted as staff.</p>
 
               {/* ✅ FILTER BAR */}
-              <div style={{
+              <div className="filter-bar" style={{
                 display: "flex", flexWrap: "wrap", gap: "10px", marginBottom: "20px",
                 padding: "15px", background: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0"
               }}>

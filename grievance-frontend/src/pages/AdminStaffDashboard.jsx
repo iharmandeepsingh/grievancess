@@ -567,7 +567,7 @@ function AdminStaffDashboard() {
               <p style={{ marginBottom: "1rem", color: "#64748b" }}>These grievances have been specifically assigned to you.</p>
 
               {/* ✅ FILTER BAR */}
-              <div style={{
+              <div className="filter-bar" style={{
                 display: "flex", flexWrap: "wrap", gap: "10px", marginBottom: "20px",
                 padding: "15px", background: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0"
               }}>
@@ -809,7 +809,7 @@ function AdminStaffDashboard() {
               <h2>My Submitted Grievances</h2>
 
               {/* ✅ FILTER BAR (For My Submissions) */}
-              <div style={{
+              <div className="filter-bar" style={{
                 display: "flex", flexWrap: "wrap", gap: "10px", marginBottom: "20px",
                 padding: "15px", background: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0"
               }}>

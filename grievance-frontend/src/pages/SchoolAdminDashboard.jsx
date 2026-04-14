@@ -298,7 +298,7 @@ function SchoolAdminDashboard() {
           {msg && <div className={`alert-box ${statusType}`}>{msg}</div>}
 
           {/* ✅ MODERN FILTER BAR (Inline Styles) */}
-          <div style={styles.filterBar}>
+          <div className="filter-bar" style={styles.filterBar}>
 
             {/* Search Inputs */}
             <div style={styles.searchGroup}>
