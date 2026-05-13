@@ -232,7 +232,7 @@ function AdminDashboard() {
             className={activeTab === "upload" ? "active" : ""}
             onClick={() => setActiveTab("upload")}
           >
-            <span className="tab-link-button">Upload Records</span>
+            <span className="tab-link-button">Export Records</span>
           </li>
 
           {canManageStaff && (

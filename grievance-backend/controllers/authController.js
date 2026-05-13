@@ -6,6 +6,7 @@ import StudentUser from "../models/StudentUser.js"; // NEW: Student users
 import StaffUser from "../models/StaffUser.js"; // NEW: Staff/Admin users
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { sendEmailOtp } from "../utils/emailService.js";
 
 
 // ================= SMS SETUP (Innuvis API) =================
@@ -83,6 +84,7 @@ export const registerRequest = async (req, res) => {
 
     // Generate OTPs
     const phoneOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    const emailOtp = Math.floor(100000 + Math.random() * 900000).toString();
 
     // Hash Password
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -94,8 +96,8 @@ export const registerRequest = async (req, res) => {
       phone,
       password: hashedPassword,
       fullName: validRecord.fullName || req.body.fullName || "",
-      otp: undefined,
-      otpExpires: undefined,
+      otp: emailOtp,
+      otpExpires: Date.now() + 10 * 60 * 1000,
       phoneOtp: phoneOtp,
       phoneOtpExpires: Date.now() + 10 * 60 * 1000,
       isVerified: false,
@@ -133,10 +135,15 @@ export const registerRequest = async (req, res) => {
       await sendSms(phone, phoneOtp);
     }
 
+    // 📧 Send Email OTP
+    if (email) {
+      await sendEmailOtp(email, emailOtp);
+    }
+
     // 🔐 Log OTP prominently in terminal
-    if (global.logOTP) global.logOTP("REGISTRATION", email, phoneOtp);
+    if (global.logOTP) global.logOTP("REGISTRATION", email, emailOtp, phoneOtp);
     
-    res.status(200).json({ message: `Verification code sent to ${phone}` });
+    res.status(200).json({ message: `Verification codes sent to ${phone} and ${email}` });
 
   } catch (err) {
     console.error("Register Error:", err);
@@ -171,6 +178,11 @@ export const verifyRegistration = async (req, res) => {
     // Validate Phone OTP
     if (user.phoneOtp !== otpPhone || user.phoneOtpExpires < Date.now()) {
       return res.status(400).json({ message: "Invalid or expired Phone OTP" });
+    }
+
+    // Validate Email OTP
+    if (user.otp !== otpEmail || user.otpExpires < Date.now()) {
+      return res.status(400).json({ message: "Invalid or expired Email OTP" });
     }
 
     // ✅ Success - Update verification status

@@ -464,6 +464,17 @@ app.get("/api/admin/export-users", verifyToken, async (req, res) => {
   }
 });
 
+// A5. Get all users as JSON
+app.get("/api/admin/all-users", verifyToken, async (req, res) => {
+  try {
+    const users = await User.find({}).select('id fullName email phone role department program isDeptAdmin adminDepartment isMasterAdmin');
+    res.json(users);
+  } catch (err) {
+    console.error("Fetch all users error:", err);
+    res.status(500).json({ message: "Error fetching all users" });
+  }
+});
+
 // ✅ B. Promote/Demote Staff (HIERARCHY FIXED)
 // New Route Name: /api/admin-staff/role (Matches Frontend)
 app.post("/api/admin-staff/role", verifyToken, async (req, res) => {

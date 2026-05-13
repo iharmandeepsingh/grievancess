@@ -22,6 +22,7 @@ function RegisterPage() {
 
   // 🔐 OTP State
   const [otpPhone, setOtpPhone] = useState("");
+  const [otpEmail, setOtpEmail] = useState("");
 
   const [step, setStep] = useState(1);
   const [msg, setMsg] = useState("");
@@ -35,11 +36,52 @@ function RegisterPage() {
     setFormData({ ...formData, [name]: processedValue });
   };
 
+  const getPasswordStrength = (password) => {
+    const reqs = {
+      length: password?.length >= 8,
+      uppercase: /[A-Z]/.test(password || ""),
+      lowercase: /[a-z]/.test(password || ""),
+      number: /[0-9]/.test(password || ""),
+      special: /[^A-Za-z0-9]/.test(password || "")
+    };
+
+    let score = 0;
+    if (!password) return { text: "", color: "transparent", percent: 0, level: 0, reqs };
+    
+    if (reqs.length) score += 1;
+    if (reqs.uppercase) score += 1;
+    if (reqs.lowercase) score += 1;
+    if (reqs.number) score += 1;
+    if (reqs.special) score += 1;
+
+    let result = { text: "", color: "transparent", percent: 0, level: 0, reqs };
+
+    if (!reqs.length) {
+      result = { text: "Too short (Min 8 chars)", color: "#ef4444", percent: 25, level: 1, reqs };
+    } else if (score <= 2) {
+      result = { text: "Weak", color: "#f97316", percent: 50, level: 2, reqs };
+    } else if (score === 3 || score === 4) {
+      result = { text: "Good", color: "#eab308", percent: 75, level: 3, reqs };
+    } else if (score === 5) {
+      result = { text: "Strong", color: "#22c55e", percent: 100, level: 4, reqs };
+    }
+    
+    return result;
+  };
+
+  const strength = getPasswordStrength(formData.password);
+
   // STEP 1: Request OTP
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
 
-    // ✅ Password Match Validation
+    // ✅ Password Match & Length Validation
+    if (formData.password.length < 8) {
+      setMsg("Password must be at least 8 characters long!");
+      setStatusType("error");
+      return;
+    }
+
     if (formData.password !== confirmPassword) {
       setMsg("Passwords do not match!");
       setStatusType("error");
@@ -61,7 +103,7 @@ function RegisterPage() {
       if (!res.ok) throw new Error(data.message);
 
       setStep(2);
-      setMsg("Verification code sent to Phone!");
+      setMsg("Verification codes sent to Phone and Email!");
       setStatusType("success");
     } catch (err) {
       setMsg(err.message || "Failed to send OTPs.");
@@ -86,6 +128,7 @@ function RegisterPage() {
         body: JSON.stringify({
           email: formData.email,
           otpPhone: otpPhone,
+          otpEmail: otpEmail,
           formData: formData
         }),
       });
@@ -107,8 +150,8 @@ function RegisterPage() {
     <div className="login-container">
       <div className="login-brand-section">
         <div className="brand-content">
-          <h1>{step === 1 ? "Join the Portal" : "Phone Verification"}</h1>
-          <p>{step === 1 ? "Create your account to access university services." : "We've sent a code to your Phone to ensure account security."}</p>
+          <h1>{step === 1 ? "Join the Portal" : "Account Verification"}</h1>
+          <p>{step === 1 ? "Create your account to access university services." : "We've sent a code to your Phone and Email to ensure account security."}</p>
           <div className="brand-footer">© 2025 University Administration</div>
         </div>
       </div>
@@ -225,6 +268,49 @@ function RegisterPage() {
                       {showPassword ? <EyeOffIcon /> : <EyeIcon />}
                     </button>
                   </div>
+                  {formData.password && (
+                    <div style={{ marginTop: '12px', padding: '0 4px', animation: 'fadeIn 0.3s ease-out' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '8px', color: strength.color, fontWeight: '600', transition: 'color 0.3s ease' }}>
+                        <span style={{ color: '#64748b' }}>Password Strength</span>
+                        <span>{strength.text}</span>
+                      </div>
+                      <div style={{ display: 'flex', gap: '6px', height: '6px' }}>
+                        {[1, 2, 3, 4].map((index) => (
+                          <div key={index} style={{
+                            flex: 1,
+                            backgroundColor: index <= strength.level ? strength.color : '#e2e8f0',
+                            borderRadius: '3px',
+                            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                            boxShadow: index <= strength.level ? `0 0 8px ${strength.color}40` : 'none',
+                            transform: index <= strength.level ? 'scaleY(1)' : 'scaleY(0.8)',
+                            opacity: index <= strength.level ? 1 : 0.5
+                          }}></div>
+                        ))}
+                      </div>
+                      <div style={{ marginTop: '12px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '0.75rem' }}>
+                        {[
+                          { label: 'Min 8 chars', met: strength.reqs?.length },
+                          { label: 'Uppercase', met: strength.reqs?.uppercase },
+                          { label: 'Lowercase', met: strength.reqs?.lowercase },
+                          { label: 'Number', met: strength.reqs?.number },
+                          { label: 'Special Char', met: strength.reqs?.special }
+                        ].map((req, i) => (
+                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: req.met ? '#16a34a' : '#94a3b8', transition: 'color 0.3s' }}>
+                            <div style={{ 
+                              width: '12px', height: '12px', borderRadius: '50%', 
+                              backgroundColor: req.met ? '#16a34a' : 'transparent',
+                              border: `1.5px solid ${req.met ? '#16a34a' : '#cbd5e1'}`,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              transition: 'all 0.3s'
+                            }}>
+                              {req.met && <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
+                            </div>
+                            <span style={{ fontWeight: req.met ? '500' : '400' }}>{req.label}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -286,6 +372,22 @@ function RegisterPage() {
                     maxLength="6"
                     value={otpPhone}
                     onChange={(e) => setOtpPhone(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Email OTP */}
+              <div className="input-group">
+                <label>Email Code (Sent to {formData.email})</label>
+                <div className="input-wrapper otp-field">
+                  <span className="icon"><MailIcon /></span>
+                  <input
+                    style={{ letterSpacing: '4px', textAlign: 'center', fontWeight: 'bold' }}
+                    placeholder="Email Code"
+                    maxLength="6"
+                    value={otpEmail}
+                    onChange={(e) => setOtpEmail(e.target.value)}
                     required
                   />
                 </div>

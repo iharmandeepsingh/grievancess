@@ -67,4 +67,43 @@ export const sendPromotionEmail = async (staffEmail, staffName, newRole, departm
   }
 };
 
+// Send OTP Email
+export const sendEmailOtp = async (email, otp) => {
+  try {
+    const emailSubject = `🔐 Your Registration OTP - Grievance Portal`;
+    const emailBody = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+        <div style="background-color: #2563eb; padding: 20px; text-align: center;">
+          <h2 style="color: white; margin: 0;">Grievance Portal</h2>
+        </div>
+        <div style="padding: 20px;">
+          <p>Dear User,</p>
+          <p>Your One-Time Password (OTP) for registration is:</p>
+          <div style="background-color: #f3f4f6; padding: 15px; text-align: center; border-radius: 8px; margin: 20px 0;">
+            <h1 style="color: #1e40af; letter-spacing: 5px; margin: 0;">${otp}</h1>
+          </div>
+          <p>This OTP is valid for 10 minutes. Please do not share it with anyone.</p>
+          <p>If you did not request this, please ignore this email.</p>
+        </div>
+        <div style="background-color: #f8fafc; padding: 15px; text-align: center; color: #64748b; font-size: 0.875rem;">
+          <p style="margin: 0;">&copy; ${new Date().getFullYear()} CT University Grievance Portal. All rights reserved.</p>
+        </div>
+      </div>
+    `;
+
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: emailSubject,
+      html: emailBody
+    });
+
+    console.log(`✅ OTP email sent to ${email}`);
+    return { success: true, message: "OTP sent successfully" };
+  } catch (error) {
+    console.error("⚠️ OTP Email sending failed:", error);
+    return { success: false, message: "OTP Email could not be sent" };
+  }
+};
+
 export default transporter;
