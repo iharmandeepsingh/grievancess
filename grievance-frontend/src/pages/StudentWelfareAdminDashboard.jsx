@@ -240,6 +240,7 @@ function StudentWelfareAdminDashboard() {
         <ul>
           <li className="admin-nav-title"><span>Student Welfare Grievances</span></li>
           <li><Link to="/admin/manage-staff">Manage Staff</Link></li>
+          <li><Link to="/admin/smart-assignment">Smart Assignment</Link></li>
         </ul>
       </nav>
 

@@ -1,10 +1,12 @@
 import Grievance from "../models/GrievanceModel.js";
 import User from "../models/UserModel.js";
 import nodemailer from "nodemailer";
+import { autoAssignGrievance } from "./routingRuleController.js";
 
 /* =====================================================
    1️⃣ STUDENT → SUBMIT GRIEVANCE
    → Goes to CATEGORY inbox (UNASSIGNED)
+   → OR Auto-assigns if routing rule exists
 ===================================================== */
 export const submitGrievance = async (req, res) => {
   try {
@@ -18,6 +20,7 @@ export const submitGrievance = async (req, res) => {
       category,         // ✅ ONLY routing key
       message,
       attachment,       // ✅ Extract attachment from JSON body
+      issueTypeId,      // ✅ NEW: Issue type for auto-assignment
     } = req.body;
 
     // 🔒 Safety validation
@@ -25,6 +28,19 @@ export const submitGrievance = async (req, res) => {
       return res.status(400).json({
         message: "Student program or category missing",
       });
+    }
+
+    // 🔥 SMART AUTO-ASSIGNMENT CHECK
+    let assignedStaff = null;
+    let assignmentMode = "manual";
+    
+    if (issueTypeId) {
+      const autoAssignment = await autoAssignGrievance(issueTypeId, category);
+      if (autoAssignment) {
+        assignedStaff = autoAssignment;
+        assignmentMode = autoAssignment.assignmentMode;
+        console.log(`🤖 Auto-assigned grievance to ${assignedStaff.staffName} (${assignmentMode} mode)`);
+      }
     }
 
     const grievance = await Grievance.create({
@@ -40,16 +56,34 @@ export const submitGrievance = async (req, res) => {
 
       attachment: attachment || "", // ✅ Save the filename string
 
-      assignedTo: null,
-      assignedRole: null,
-      assignedBy: null,
+      issueTypeId: issueTypeId || null,
+      assignmentMode: assignmentMode,
 
-      status: "Pending",
+      // Assignment fields
+      assignedTo: assignedStaff ? assignedStaff.staffId : null,
+      assignedRole: assignedStaff ? "staff" : null,
+      assignedBy: assignedStaff ? "SYSTEM_AUTO" : null,
+      deadlineDate: assignedStaff ? calculateDeadline() : null,
+
+      status: assignedStaff ? "Assigned" : "Pending",
     });
 
+    // 📧 Send email notification if auto-assigned
+    if (assignedStaff) {
+      try {
+        await sendAssignmentNotification(grievance, assignedStaff.staffName);
+      } catch (emailError) {
+        console.error("Email notification failed (non-blocking):", emailError.message);
+        // Continue without failing the submission
+      }
+    }
+
     res.status(201).json({
-      message: "✅ Grievance submitted successfully",
+      message: assignedStaff 
+        ? "✅ Grievance submitted and auto-assigned successfully"
+        : "✅ Grievance submitted successfully",
       grievance,
+      autoAssigned: !!assignedStaff,
     });
 
   } catch (err) {
@@ -59,6 +93,130 @@ export const submitGrievance = async (req, res) => {
       message: "Failed to submit grievance",
       error: err.message || "Unknown error"
     });
+  }
+};
+
+// Helper: Calculate default deadline (7 days from now)
+function calculateDeadline() {
+  const deadline = new Date();
+  deadline.setDate(deadline.getDate() + 7);
+  return deadline;
+}
+
+// Helper: Send assignment notification email
+async function sendAssignmentNotification(grievance, staffName) {
+  try {
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: grievance.email,
+      subject: `🎯 New Grievance Auto-Assigned - ${grievance.category}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #2563eb;">New Grievance Auto-Assigned</h2>
+          <p>Dear ${staffName},</p>
+          <p>A new grievance has been automatically assigned to you:</p>
+          <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <p><strong>Category:</strong> ${grievance.category}</p>
+            <p><strong>Student:</strong> ${grievance.name} (${grievance.userId})</p>
+            <p><strong>Message:</strong> ${grievance.message}</p>
+            <p><strong>Deadline:</strong> ${grievance.deadlineDate ? new Date(grievance.deadlineDate).toLocaleDateString() : 'N/A'}</p>
+          </div>
+          <p>Please log in to the portal to view and process this grievance.</p>
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
+          <p style="color: #64748b; font-size: 0.9rem;">Best regards,<br><strong>Grievance Portal Team</strong></p>
+        </div>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log(`✅ Assignment notification sent to ${staffName}`);
+  } catch (error) {
+    console.error("⚠️ Failed to send assignment notification:", error);
+  }
+}
+
+/* =====================================================
+   🆕 POOL ACCEPT MODE: Get grievances available for acceptance
+===================================================== */
+export const getPoolAcceptGrievances = async (req, res) => {
+  try {
+    const { staffId, department } = req.query;
+    
+    // Find all routing rules with pool_accept mode for this department
+    const RoutingRule = (await import("../models/RoutingRule.js")).default;
+    const routingRules = await RoutingRule.find({
+      department,
+      assignmentMode: "pool_accept",
+      isActive: true
+    }).populate('issueTypeId');
+
+    if (routingRules.length === 0) {
+      return res.json([]);
+    }
+
+    // Get all issue type IDs from routing rules
+    const issueTypeIds = routingRules.map(r => r.issueTypeId._id);
+
+    // Find grievances with these issue types that are still Pending
+    const grievances = await Grievance.find({
+      issueTypeId: { $in: issueTypeIds },
+      status: "Pending",
+      assignmentMode: "pool_accept"
+    }).sort({ createdAt: -1 });
+
+    res.json(grievances);
+  } catch (err) {
+    console.error("Error fetching pool accept grievances:", err);
+    res.status(500).json({ message: "Failed to fetch pool accept grievances" });
+  }
+};
+
+/* =====================================================
+   🆕 POOL ACCEPT MODE: Staff accepts grievance
+===================================================== */
+export const acceptGrievance = async (req, res) => {
+  try {
+    const { grievanceId } = req.params;
+    const { staffId, staffName } = req.body;
+
+    const grievance = await Grievance.findById(grievanceId);
+    if (!grievance) {
+      return res.status(404).json({ message: "Grievance not found" });
+    }
+
+    // Check if grievance is still available for acceptance
+    if (grievance.status !== "Pending" || grievance.assignmentMode !== "pool_accept") {
+      return res.status(400).json({ message: "Grievance is not available for acceptance" });
+    }
+
+    // Assign to staff
+    grievance.assignedTo = staffId;
+    grievance.assignedRole = "staff";
+    grievance.assignedBy = "STAFF_ACCEPT";
+    grievance.status = "Assigned";
+    grievance.deadlineDate = calculateDeadline();
+
+    await grievance.save();
+
+    // Update staff pool load
+    const StaffPool = (await import("../models/StaffPool.js")).default;
+    await StaffPool.findOneAndUpdate(
+      { staffId },
+      { $inc: { currentLoad: 1 } }
+    );
+
+    res.json({ message: "Grievance accepted successfully", grievance });
+  } catch (err) {
+    console.error("Error accepting grievance:", err);
+    res.status(500).json({ message: "Failed to accept grievance" });
   }
 };
 
@@ -81,12 +239,16 @@ export const getAllGrievances = async (req, res) => {
 
 
 /* =====================================================
-   3️⃣ CATEGORY ADMIN → CATEGORY INBOX
+   3️⃣ CATEGORY ADMIN → VIEW THEIR CATEGORY'S GRIEVANCES
    → Only grievances of THEIR category
 ===================================================== */
 export const getCategoryGrievances = async (req, res) => {
   try {
-    const category = decodeURIComponent(req.params.category).trim();
+    // Check for category in params (for /category/:category) or query (for /department/:department?category=)
+    const category = req.params.category 
+      ? decodeURIComponent(req.params.category).trim()
+      : (req.query.category ? decodeURIComponent(req.query.category).trim() : null);
+    
     const userId = req.user ? req.user.id : null;
 
     const grievances = await Grievance.find({

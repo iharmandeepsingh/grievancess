@@ -25,6 +25,9 @@ import grievanceRoutes from "./routes/grievanceRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import staffRecordRoutes from "./routes/staffRecordRoutes.js"; // NEW: Staff Records Routes
+import issueRoutes from "./routes/issueRoutes.js"; // NEW: Issue Type Routes
+import routingRuleRoutes from "./routes/routingRuleRoutes.js"; // NEW: Routing Rule Routes
+import staffPoolRoutes from "./routes/staffPoolRoutes.js"; // NEW: Staff Pool Routes
 import UniversityRecord from "./models/UniversityRecord.js"; // Legacy Backup
 import StudentRecord from "./models/StudentRecord.js"; // NEW: Student Records
 import StaffRecord from "./models/StaffRecord.js"; // NEW: Staff/Admin Records
@@ -48,6 +51,9 @@ app.use(express.json());
 
 // ------------------ REGISTER ROUTES ------------------
 app.use("/api/staff-records", staffRecordRoutes);
+app.use("/api/issue-types", issueRoutes); // NEW: Issue Type Routes
+app.use("/api/routing-rules", routingRuleRoutes); // NEW: Routing Rule Routes
+app.use("/api/staff-pool", staffPoolRoutes); // NEW: Staff Pool Routes
 
 // ------------------ 2️⃣ Database & GridFS Init ------------------
 connectDB();
@@ -766,42 +772,6 @@ app.post("/api/admin/transfer-ownership", verifyToken, async (req, res) => {
   }
 });
 
-// ⬇️ REGISTRATION & LOGIN ROUTES MOVED TO: routes/authRoutes.js + controllers/authController.js
-
-
-// server.js -> /api/auth/user/:id Route
-app.get("/api/auth/user/:id", async (req, res) => {
-  try {
-    const safeId = req.params.id.toString().trim().toUpperCase();
-    const user = await User.findOne({ id: safeId });
-
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    // 🔥 LOGIC FIX:
-    // Agar Student hai -> toh 'program' bhejo
-    // Agar Staff hai -> toh 'staffDepartment' ya 'adminDepartment' bhejo
-    let deptToSend = "";
-
-    if (user.role === "student") {
-      deptToSend = user.program;
-    } else {
-      deptToSend = user.staffDepartment || user.adminDepartment;
-    }
-
-    res.json({
-      fullName: user.fullName,
-      email: user.email,
-      phone: user.phone,
-      role: user.role,
-      // Frontend ko ab hamesha 'department' milega
-      department: deptToSend || "General"
-    });
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server Error" });
-  }
-});
 // ------------------ 8️⃣ FILE UPLOAD (Disk → GridFS Stream) ------------------
 
 app.post("/api/upload", upload.single("file"), (req, res) => {

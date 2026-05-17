@@ -16,8 +16,7 @@ function Admission() {
     regid: userId || "",
     email: "",
     phone: "",
-    school: "", // ✅ API se bhara jayega
-    issueType: "",
+    school: "",
     message: "",
   });
 
@@ -25,6 +24,8 @@ function Admission() {
   const [msg, setMsg] = useState("");
   const [statusType, setStatusType] = useState("");
   const [loading, setLoading] = useState(true);
+  const [issueTypes, setIssueTypes] = useState([]);
+  const [selectedIssueType, setSelectedIssueType] = useState("");
 
   // Auth Check
   useEffect(() => {
@@ -43,7 +44,6 @@ function Admission() {
             name: data.fullName || "",
             email: data.email || "",
             phone: data.phone || "",
-            // 🔥 MAIN FIX:
             school: data.department || "",
           }));
         }
@@ -55,6 +55,26 @@ function Admission() {
     };
     if (userId) fetchUserDetails();
   }, [userId]);
+
+  // ✅ FETCH ISSUE TYPES FOR ADMISSION
+  useEffect(() => {
+    const fetchIssueTypes = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/issue-types/department/Admission");
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error("Fetch issue types error:", errorText);
+          return;
+        }
+        const data = await res.json();
+        console.log("Fetched issue types:", data);
+        setIssueTypes(data);
+      } catch (error) {
+        console.error("Error fetching issue types:", error);
+      }
+    };
+    fetchIssueTypes();
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -99,8 +119,9 @@ function Admission() {
       studentProgram: formData.school,
       school: "Admission",
       category: "Admission",
-      message: `${formData.issueType} - ${formData.message}`,
-      attachment: attachmentUrl || ""
+      message: formData.message,
+      attachment: attachmentUrl || "",
+      issueTypeId: selectedIssueType || null // ✅ Include issue type for auto-assignment
     };
 
     try {
@@ -232,27 +253,29 @@ function Admission() {
               <div className="input-group">
                 <label>Select Issue</label>
                 <select
-                  name="issueType"
-                  value={formData.issueType}
-                  onChange={handleChange}
+                  value={selectedIssueType}
+                  onChange={(e) => setSelectedIssueType(e.target.value)}
                   required
+                  style={{ padding: "10px", borderRadius: "6px", border: "1px solid #cbd5e1", cursor: "pointer" }}
                 >
                   <option value="">-- Choose an Issue --</option>
-                  <option value="Document Verification Issue">Document Verification Issue</option>
-                  <option value="Admission Form Correction">Admission Form Correction</option>
-                  <option value="Scholarship Query">Scholarship Query</option>
-                  <option value="Admission Withdrawal">Admission Withdrawal</option>
+                  {issueTypes.map((issue) => (
+                    <option key={issue._id} value={issue._id}>
+                      {issue.issueName}
+                    </option>
+                  ))}
                 </select>
               </div>
 
               <div className="input-group">
-                <label>Message (Optional)</label>
+                <label>Message</label>
                 <textarea
                   name="message"
                   value={formData.message}
                   onChange={handleChange}
                   rows="4"
-                  placeholder="Details..."
+                  placeholder="Describe your issue..."
+                  required
                 ></textarea>
               </div>
 

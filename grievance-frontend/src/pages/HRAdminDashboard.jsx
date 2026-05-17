@@ -261,6 +261,8 @@ function HRAdminDashboard() {
           </li>
 
           <li style={{ marginLeft: "auto" }}>
+            <li><Link to="/admin/manage-staff">Manage Staff</Link></li>
+            <li><Link to="/admin/smart-assignment">Smart Assignment</Link></li>
             <Link to="/admin/manage-staff" style={{ padding: "8px 16px", background: "#f1f5f9", borderRadius: "6px", color: "#334155", textDecoration: "none" }}>
               Manage Dept Staff
             </Link>

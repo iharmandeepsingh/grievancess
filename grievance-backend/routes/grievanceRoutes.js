@@ -8,13 +8,16 @@ import {
   submitGrievance,
   getAllGrievances,
   getCategoryGrievances,
-  getUserGrievances,
+  assignToStaff,
   getAssignedGrievances,
   updateGrievanceStatus,
-  assignToStaff,
-  getGrievanceDetail,
   requestExtension,
-  resolveExtension
+  resolveExtension,
+  verifyResolution,
+  hideGrievance,
+  getPoolAcceptGrievances,
+  acceptGrievance,
+  getGrievanceDetail
 } from "../controllers/grievanceController.js";
 
 const router = express.Router();
@@ -25,10 +28,7 @@ const router = express.Router();
 router.post("/submit", submitGrievance);
 
 // ✅ Student grievance history
-router.get("/user/:userId", getUserGrievances);
-
-// ✅ Grievance details
-router.get("/detail/:grievanceId", getGrievanceDetail);
+router.get("/user/:userId", getCategoryGrievances); // Reuse for user grievances
 
 /* ================= MASTER ADMIN ================= */
 
@@ -37,6 +37,7 @@ router.get("/all", getAllGrievances);
 /* ================= CATEGORY ADMIN ================= */
 
 router.get("/category/:category", getCategoryGrievances);
+router.get("/department/:department", getCategoryGrievances); // Reuse for department grievances
 router.put("/assign/:id", assignToStaff);
 
 /* ================= STAFF ================= */
@@ -137,6 +138,13 @@ router.post("/verify-resolution/:id", async (req, res) => {
   }
 });
 
+/* ================= 🆕 POOL ACCEPT MODE ================= */
 
+router.get("/pool-accept", getPoolAcceptGrievances);
+router.post("/accept/:grievanceId", acceptGrievance);
+
+/* ================= GRIEVANCE DETAIL ================= */
+
+router.get("/detail/:grievanceId", getGrievanceDetail);
 
 export default router;

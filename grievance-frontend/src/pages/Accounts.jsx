@@ -16,8 +16,7 @@ function Accounts() {
     regid: userId || "",
     email: "",
     phone: "",
-    school: "", // ✅ Yeh API se bhara jayega
-    issueType: "",
+    school: "",
     message: "",
   });
 
@@ -25,6 +24,8 @@ function Accounts() {
   const [msg, setMsg] = useState("");
   const [statusType, setStatusType] = useState("");
   const [loading, setLoading] = useState(true);
+  const [issueTypes, setIssueTypes] = useState([]);
+  const [selectedIssueType, setSelectedIssueType] = useState("");
 
   // Auth Check
   useEffect(() => {
@@ -44,7 +45,6 @@ function Accounts() {
             name: data.fullName || "",
             email: data.email || "",
             phone: data.phone || "",
-            // 🔥 MAIN FIX: API se 'department' field utha kar 'school' mein set ki
             school: data.department || "",
           }));
         }
@@ -56,6 +56,26 @@ function Accounts() {
     };
     if (userId) fetchUserDetails();
   }, [userId]);
+
+  // ✅ FETCH ISSUE TYPES FOR ACCOUNTS
+  useEffect(() => {
+    const fetchIssueTypes = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/issue-types/department/Accounts");
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error("Fetch issue types error:", errorText);
+          return;
+        }
+        const data = await res.json();
+        console.log("Fetched issue types:", data);
+        setIssueTypes(data);
+      } catch (error) {
+        console.error("Error fetching issue types:", error);
+      }
+    };
+    fetchIssueTypes();
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -100,8 +120,9 @@ function Accounts() {
       studentProgram: formData.school,
       school: "Accounts",
       category: "Accounts",
-      message: `${formData.issueType} - ${formData.message}`,
-      attachment: attachmentUrl || ""
+      message: formData.message,
+      attachment: attachmentUrl || "",
+      issueTypeId: selectedIssueType || null // ✅ Include issue type for auto-assignment
     };
 
     try {
@@ -235,28 +256,29 @@ function Accounts() {
               <div className="input-group">
                 <label>Select Issue</label>
                 <select
-                  name="issueType"
-                  value={formData.issueType}
-                  onChange={handleChange}
+                  value={selectedIssueType}
+                  onChange={(e) => setSelectedIssueType(e.target.value)}
                   required
+                  style={{ padding: "10px", borderRadius: "6px", border: "1px solid #cbd5e1", cursor: "pointer" }}
                 >
                   <option value="">-- Choose an Issue --</option>
-                  <option value="Fee Payment Problem">Fee Payment Problem</option>
-                  <option value="Refund Delay">Refund Delay</option>
-                  <option value="Receipt Missing">Receipt Missing</option>
-                  <option value="Overcharge Issue">Overcharge Issue</option>
-                  <option value="Other">Other</option>
+                  {issueTypes.map((issue) => (
+                    <option key={issue._id} value={issue._id}>
+                      {issue.issueName}
+                    </option>
+                  ))}
                 </select>
               </div>
 
               <div className="input-group">
-                <label>Message (Optional)</label>
+                <label>Message</label>
                 <textarea
                   name="message"
                   value={formData.message}
                   onChange={handleChange}
                   rows="4"
-                  placeholder="Details..."
+                  placeholder="Describe your issue..."
+                  required
                 ></textarea>
               </div>
 

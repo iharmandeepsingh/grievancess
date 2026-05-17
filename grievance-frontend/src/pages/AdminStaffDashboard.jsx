@@ -47,7 +47,7 @@ function AdminStaffDashboard() {
   const isDeptAdmin = localStorage.getItem("is_dept_admin") === "true";
 
   // UI State
-  const [activeTab, setActiveTab] = useState("assigned"); // "assigned" | "submit" | "mine"
+  const [activeTab, setActiveTab] = useState("assigned"); // "assigned" | "submit" | "mine" | "pool"
   const [staffName, setStaffName] = useState("");
   const [staffEmail, setStaffEmail] = useState("");
   const [grievances, setGrievances] = useState([]);
@@ -77,6 +77,10 @@ function AdminStaffDashboard() {
   const [errors, setErrors] = useState({});
   const [myGrievances, setMyGrievances] = useState([]);
   const [loadingMine, setLoadingMine] = useState(false);
+
+  // ✅ POOL ACCEPT STATE
+  const [poolGrievances, setPoolGrievances] = useState([]);
+  const [loadingPool, setLoadingPool] = useState(false);
 
   // ✅ FILTER STATES
   const [searchId, setSearchId] = useState(""); // Acts as Student ID or Staff ID based on tab
@@ -429,6 +433,60 @@ function AdminStaffDashboard() {
   // Load my submissions when tab changes
   useEffect(() => { if (activeTab === "mine") fetchMySubmissions(); }, [activeTab]);
 
+  // ✅ Fetch Pool Accept Grievances
+  useEffect(() => {
+    if (activeTab === "pool" && myDepartment) {
+      fetchPoolGrievances();
+    }
+  }, [activeTab, myDepartment]);
+
+  const fetchPoolGrievances = async () => {
+    if (!myDepartment) return;
+    setLoadingPool(true);
+    try {
+      const res = await fetch(`http://localhost:5000/api/grievances/pool-accept?staffId=${staffId}&department=${encodeURIComponent(myDepartment)}`);
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("Fetch pool grievances error:", errorText);
+        return;
+      }
+      const data = await res.json();
+      console.log("Fetched pool grievances:", data);
+      setPoolGrievances(data);
+    } catch (err) {
+      console.error("Error fetching pool grievances:", err);
+    } finally {
+      setLoadingPool(false);
+    }
+  };
+
+  const handleAcceptGrievance = async (grievanceId) => {
+    if (!window.confirm("Are you sure you want to accept this grievance?")) return;
+
+    try {
+      const res = await fetch(`http://localhost:5000/api/grievances/accept/${grievanceId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ staffId, staffName })
+      });
+
+      if (res.ok) {
+        setMsg("Grievance accepted successfully!");
+        setStatusType("success");
+        fetchPoolGrievances(); // Refresh pool
+        setTimeout(() => setMsg(""), 3000);
+      } else {
+        const error = await res.json();
+        setMsg(error.message || "Failed to accept grievance");
+        setStatusType("error");
+      }
+    } catch (err) {
+      console.error("Error accepting grievance:", err);
+      setMsg("Failed to accept grievance");
+      setStatusType("error");
+    }
+  };
+
   const handleLogout = () => {
     localStorage.clear();
     navigate("/");
@@ -543,6 +601,11 @@ function AdminStaffDashboard() {
               My Assigned Tasks
             </button>
           </li>
+          <li className={activeTab === "pool" ? "active" : ""}>
+            <button onClick={() => setActiveTab("pool")} className="tab-link-button">
+              Pool Accept Queue
+            </button>
+          </li>
           <li className={activeTab === "submit" ? "active" : ""}>
             <button onClick={() => setActiveTab("submit")} className="tab-link-button">
               Submit Grievance
@@ -653,7 +716,9 @@ function AdminStaffDashboard() {
                         <th>Email</th>
                         <th>ID</th>
                         <th>Message</th>
-                        <th>Submitted At</th>                    <th className="deadline-col">Deadline</th>                    <th>Status</th>
+                        <th>Submitted At</th>
+                        <th className="deadline-col">Deadline</th>
+                        <th>Status</th>
                         <th>Action</th>
                       </tr>
                     </thead>
@@ -663,89 +728,27 @@ function AdminStaffDashboard() {
                           <td>{g.name}</td>
                           <td>{g.email}</td>
                           <td>{g.regid || "-"}</td>
-
-                          {/* --- FIXED MESSAGE CELL (Max Width 150px + See More) --- */}
                           <td className="message-cell" style={{ maxWidth: '150px' }}>
                             <div
-                              style={{ padding: "4px", borderRadius: "4px", transition: "background 0.22s" }}
+                              style={{
+                                padding: "4px",
+                                borderRadius: "4px",
+                                transition: "background 0.22s"
+                              }}
                               onMouseEnter={(e) => e.currentTarget.style.background = "#f1f5f9"}
                               onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
                             >
-                              <span style={{ wordBreak: 'break-all', lineHeight: '1.2', color: "#334155", fontWeight: "500" }}>
-                                {g.message.substring(0, 30)}{g.message.length > 30 ? "..." : ""}
-                              </span>
+                              <span style={{ wordBreak: 'break-all', lineHeight: '1.2', color: "#334155", fontWeight: "500" }}>{g.message.substring(0, 30)}{g.message.length > 30 ? "..." : ""}</span>
                             </div>
                           </td>
-                          {/* ---------------------------------------------------- */}
-
                           <td>{formatDate(g.createdAt)}</td>
                           <td className="deadline-col">
                             {(g.deadlineDate || g.deadline || g.deadline_date) ? formatDateDateOnly(g.deadlineDate || g.deadline || g.deadline_date) : "-"}
-                            {/* Extension Request Button */}
-                            {g.status !== "Resolved" && g.status !== "Rejected" && (
-                              <div style={{ marginTop: "5px" }}>
-                                {g.extensionRequest?.status === "Pending" ? (
-                                  <span style={{ fontSize: "0.75rem", color: "#d97706", fontWeight: "600" }}>Ext. Pending</span>
-                                ) : (
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); setExtensionPopup(g); }}
-                                    title="Request Deadline Extension"
-                                    style={{ background: "none", border: "none", cursor: "pointer", color: "#6366f1", display: "flex", alignItems: "center", gap: "4px", fontSize: "0.8rem" }}
-                                  >
-                                    <ClockIcon width="14" height="14" /> Extend
-                                  </button>
-                                )}
-                              </div>
-                            )}
                           </td>
+                          <td><span className={`status-badge status-${g.status.toLowerCase()}`}>{g.status}</span></td>
                           <td>
-                            <span
-                              className={`status-badge status-${g.status
-                                .toLowerCase()
-                                .replace(" ", "")}`}
-                            >
-                              {g.status}
-                            </span>
-                          </td>
-                          <td className="action-cell">
                             <div className="action-buttons">
-                              {g.status !== "Resolved" && g.status !== "Rejected" ? (
-                                <>
-                                  <button
-                                    className="action-btn resolve-btn"
-                                    onClick={(e) => { e.stopPropagation(); updateStatus(g._id, "Resolved"); }}
-                                  >
-                                    Mark Resolved
-                                  </button>
-                                  <button
-                                    className="action-btn reject-btn"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      if (window.confirm("Are you sure you want to REJECT this grievance?")) updateStatus(g._id, "Rejected");
-                                    }}
-                                  >
-                                    Reject
-                                  </button>
-                                </>
-                              ) : (
-                                <span className="done-btn">Resolved</span>
-                              )}
-
-                              {/* Chat Button with Notification Wrapper */}
-                              <div className="chat-btn-wrapper">
-                                <button
-                                  className="action-btn"
-                                  style={{ backgroundColor: "#2563eb", color: "white" }}
-                                  onClick={(e) => { e.stopPropagation(); openChat(g._id); }}
-                                >
-                                  Chat
-                                </button>
-                                {/* 🔴 RED DOT */}
-                                {unreadMap[g._id] && (
-                                  <span className="notification-dot"></span>
-                                )}
-                              </div>
-
+                              <button className="action-btn resolve-btn" onClick={(e) => { e.stopPropagation(); updateStatus(g._id, "Resolved"); }} disabled={g.status === "Resolved" || g.status === "Rejected"} style={{ opacity: (g.status === "Resolved" || g.status === "Rejected") ? 0.5 : 1, cursor: (g.status === "Resolved" || g.status === "Rejected") ? "not-allowed" : "pointer" }}>Resolve</button>
                             </div>
                           </td>
                         </tr>
@@ -757,7 +760,86 @@ function AdminStaffDashboard() {
             </>
           )}
 
-          {/* TAB 2: SUBMIT GRIEVANCE */}
+          {/* TAB 2: POOL ACCEPT QUEUE */}
+          {activeTab === "pool" && (
+            <>
+              <h2>Pool Accept Queue</h2>
+              <p style={{ marginBottom: "1rem", color: "#64748b" }}>
+                Grievances available for you to accept (Pool Accept Mode). First to accept gets assigned!
+              </p>
+
+              {loadingPool ? (
+                <p>Loading pool grievances...</p>
+              ) : poolGrievances.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "40px", background: "white", borderRadius: "12px", border: "1px dashed #cbd5e1" }}>
+                  <p style={{ color: "#64748b", margin: 0 }}>No grievances available in the pool</p>
+                </div>
+              ) : (
+                <div className="table-container">
+                  <table className="grievance-table">
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>ID</th>
+                        <th>Message</th>
+                        <th>Submitted At</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {poolGrievances.map((g) => (
+                        <tr key={g._id}>
+                          <td>{g.name}</td>
+                          <td>{g.email}</td>
+                          <td>{g.regid || "-"}</td>
+                          <td className="message-cell" style={{ maxWidth: '150px' }}>
+                            <div
+                              style={{ padding: "4px", borderRadius: "4px", transition: "background 0.22s" }}
+                              onMouseEnter={(e) => e.currentTarget.style.background = "#f1f5f9"}
+                              onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                            >
+                              <span style={{ wordBreak: 'break-all', lineHeight: '1.2', color: "#334155", fontWeight: "500" }}>
+                                {g.message.substring(0, 30)}{g.message.length > 30 ? "..." : ""}
+                              </span>
+                            </div>
+                          </td>
+                          <td>{formatDate(g.createdAt)}</td>
+                          <td>
+                            <span className={`status-badge status-${g.status.toLowerCase().replace(" ", "")}`}>
+                              {g.status}
+                            </span>
+                          </td>
+                          <td className="action-cell">
+                            <button
+                              onClick={() => handleAcceptGrievance(g._id)}
+                              style={{
+                                padding: "8px 16px",
+                                background: "#16a34a",
+                                color: "white",
+                                border: "none",
+                                borderRadius: "6px",
+                                cursor: "pointer",
+                                fontWeight: "600",
+                                transition: "all 0.2s"
+                              }}
+                              onMouseOver={(e) => e.currentTarget.style.transform = "translateY(-2px)"}
+                              onMouseOut={(e) => e.currentTarget.style.transform = "translateY(0)"}
+                            >
+                              Accept
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* TAB 3: SUBMIT GRIEVANCE */}
           {activeTab === "submit" && (
             <>
               <h2>Submit Staff Grievance</h2>

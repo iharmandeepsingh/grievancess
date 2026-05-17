@@ -23,6 +23,10 @@ function StudentWelfare() {
   const [statusType, setStatusType] = useState("");
   const [loading, setLoading] = useState(true);
 
+  // ✅ NEW: Issue Type Selection
+  const [issueTypes, setIssueTypes] = useState([]);
+  const [selectedIssueType, setSelectedIssueType] = useState("");
+
   // 🔒 Route protection
   useEffect(() => {
     if (!role || role !== "student") navigate("/");
@@ -55,6 +59,26 @@ function StudentWelfare() {
 
     if (userId) fetchUser();
   }, [userId]);
+
+  // ✅ NEW: Fetch issue types for Student Welfare
+  useEffect(() => {
+    const fetchIssueTypes = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/issue-types/department/Student Welfare");
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error("Fetch issue types error:", errorText);
+          return;
+        }
+        const data = await res.json();
+        console.log("Fetched issue types:", data);
+        setIssueTypes(data);
+      } catch (error) {
+        console.error("Error fetching issue types:", error);
+      }
+    };
+    fetchIssueTypes();
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, message: e.target.value });
@@ -100,7 +124,8 @@ function StudentWelfare() {
       studentProgram: formData.program,
       category: "Student Welfare",
       message: formData.message,
-      attachment: attachmentUrl || "" // Send filename string
+      attachment: attachmentUrl || "", // Send filename string
+      issueTypeId: selectedIssueType || null // ✅ NEW: Include issue type for auto-assignment
     };
 
     try {
@@ -231,6 +256,36 @@ function StudentWelfare() {
                   className="read-only-input"
                 />
               </div>
+
+              {/* ✅ NEW: Issue Type Dropdown */}
+              {issueTypes.length > 0 && (
+                <div className="input-group">
+                  <label>Issue Type</label>
+                  <select
+                    value={selectedIssueType}
+                    onChange={(e) => setSelectedIssueType(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: "10px",
+                      borderRadius: "6px",
+                      border: "1px solid #cbd5e1",
+                      fontSize: "1rem"
+                    }}
+                  >
+                    <option value="">Select an issue type (optional)</option>
+                    {issueTypes.map((issue) => (
+                      <option key={issue._id} value={issue._id}>
+                        {issue.issueName}
+                      </option>
+                    ))}
+                  </select>
+                  {selectedIssueType && (
+                    <p style={{ fontSize: "0.85rem", color: "#64748b", marginTop: "5px" }}>
+                      🤖 This grievance will be auto-assigned based on routing rules
+                    </p>
+                  )}
+                </div>
+              )}
 
               <div className="input-group">
                 <label>Message</label>

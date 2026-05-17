@@ -26,7 +26,7 @@ const grievanceSchema = new mongoose.Schema(
     }
     ,
 
-    // ================= GRIEVANCE ROUTING (ONLY CATEGORY) =================
+    // ================= GRIEVANCE ROUTING (CATEGORY + ISSUE TYPE) =================
     category: {
       type: String,
       required: true,
@@ -48,6 +48,16 @@ const grievanceSchema = new mongoose.Schema(
         "CRC (Placement)",
         "Transport"
       ]
+    },
+    issueTypeId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "IssueType",
+      default: null
+    },
+    assignmentMode: {
+      type: String,
+      enum: ["manual", "single", "round_robin", "pool_accept"],
+      default: "manual"
     },
     verificationAttempts: {
       type: Number,

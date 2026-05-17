@@ -227,6 +227,7 @@ function ExaminationAdminDashboard() {
         <ul>
           <li className="admin-nav-title"><span>Examination Grievances</span></li>
           <li><Link to="/admin/manage-staff">Manage Staff</Link></li>
+          <li><Link to="/admin/smart-assignment">Smart Assignment</Link></li>
         </ul>
       </nav>
 
@@ -249,7 +250,15 @@ function ExaminationAdminDashboard() {
             />
             <select
               value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
-              style={{ padding: "10px", borderRadius: "6px", border: "1px solid #cbd5e1", flex: "1 1 120px", cursor: "pointer" }}
+              style={{ 
+                padding: "10px", 
+                borderRadius: "6px", 
+                border: "1px solid #cbd5e1", 
+                flex: "1 1 120px", 
+                cursor: "pointer",
+                zIndex: 1000,
+                position: "relative"
+              }}
             >
               <option value="All">All Status</option>
               <option value="Pending">Pending</option>

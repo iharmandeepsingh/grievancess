@@ -31,6 +31,7 @@ import HRAdminDashboard from "./pages/HRAdminDashboard";
 import CRCAdminDashboard from "./pages/CRCAdminDashboard";
 import TransportAdminDashboard from "./pages/TransportAdminDashboard";
 import StudentTransport from "./pages/StudentTransport";
+import IssueManagementPage from "./pages/IssueManagementPage"; // NEW: Smart Assignment Configuration
 
 // Helper to decide where DEPT ADMINS (Priya) go
 const getDeptAdminRoute = (department) => {
@@ -139,6 +140,7 @@ function App() {
         {/* --- ADMIN ROUTES (Bosses) --- */}
         <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={["admin"]}><AdminDashboard /></ProtectedRoute>} />
         <Route path="/admin/manage-staff" element={<ProtectedRoute allowedRoles={["admin", "staff"]}><AdminManageStaff /></ProtectedRoute>} />
+        <Route path="/admin/smart-assignment" element={<ProtectedRoute allowedRoles={["admin", "staff"]}><IssueManagementPage /></ProtectedRoute>} /> {/* NEW: Smart Assignment Config */}
 
         {/* Dept Boss Dashboards */}
         <Route path="/admin/account" element={<ProtectedRoute allowedRoles={["admin", "staff"]}><AccountAdminDashboard /></ProtectedRoute>} />
