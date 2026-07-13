@@ -244,29 +244,20 @@ function HRAdminDashboard() {
         <ul>
           <li className="admin-nav-title"><span>HR Department </span></li>
           
-          <li 
-            className={activeTab === 'grievances' ? 'active' : ''} 
-            onClick={() => setActiveTab('grievances')} 
-            style={{ cursor: 'pointer', padding: '10px 15px', color: activeTab === 'grievances' ? '#2563eb' : '#64748b', fontWeight: activeTab === 'grievances' ? '600' : 'normal', borderBottom: activeTab === 'grievances' ? '2px solid #2563eb' : 'none' }}
-          >
-            Grievances
+          <li className={activeTab === 'grievances' ? 'active' : ''}>
+            <span className="tab-link-button" onClick={() => setActiveTab('grievances')}>
+              Grievances
+            </span>
           </li>
           
-          <li 
-            className={activeTab === 'staff_records' ? 'active' : ''} 
-            onClick={() => setActiveTab('staff_records')} 
-            style={{ cursor: 'pointer', padding: '10px 15px', color: activeTab === 'staff_records' ? '#2563eb' : '#64748b', fontWeight: activeTab === 'staff_records' ? '600' : 'normal', borderBottom: activeTab === 'staff_records' ? '2px solid #2563eb' : 'none' }}
-          >
-            Staff Records
+          <li className={activeTab === 'staff_records' ? 'active' : ''}>
+            <span className="tab-link-button" onClick={() => setActiveTab('staff_records')}>
+              Staff Records
+            </span>
           </li>
 
-          <li style={{ marginLeft: "auto" }}>
-            <li><Link to="/admin/manage-staff">Manage Staff</Link></li>
-            <li><Link to="/admin/smart-assignment">Smart Assignment</Link></li>
-            <Link to="/admin/manage-staff" style={{ padding: "8px 16px", background: "#f1f5f9", borderRadius: "6px", color: "#334155", textDecoration: "none" }}>
-              Manage Dept Staff
-            </Link>
-          </li>
+          <li><Link to="/admin/manage-staff">Manage Staff</Link></li>
+          <li><Link to="/admin/smart-assignment">Smart Assignment</Link></li>
         </ul>
       </nav>
 

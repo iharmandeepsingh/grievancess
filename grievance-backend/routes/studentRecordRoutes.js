@@ -10,6 +10,7 @@ import {
   deleteStudentRecord,
   clearAllStudentRecords,
   getUploadProgress,
+  updateStudentRecord,
 } from "../controllers/studentRecordController.js";
 
 const router = express.Router();
@@ -59,5 +60,8 @@ router.delete("/clear-all", clearAllStudentRecords);
 
 // DELETE /api/student-records/:id
 router.delete("/:id", deleteStudentRecord);
+
+// PUT /api/student-records/:id  — update single record
+router.put("/:id", updateStudentRecord);
 
 export default router;

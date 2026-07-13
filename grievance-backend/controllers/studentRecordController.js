@@ -252,6 +252,25 @@ export const deleteStudentRecord = async (req, res) => {
   }
 };
 
+// ✅ Update one record
+export const updateStudentRecord = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { ctuId, fullName, email, phone, program, studentType, school, batch } = req.body;
+    
+    const record = await StudentRecord.findOneAndUpdate(
+      { id: id.trim().toUpperCase() },
+      { ctuId: ctuId || null, fullName, email, phone, program, studentType, school, batch },
+      { new: true, runValidators: true }
+    );
+    
+    if (!record) return res.status(404).json({ message: "Record not found" });
+    res.json({ message: "Record updated successfully", record });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to update record", error: error.message });
+  }
+};
+
 // ✅ Clear ALL records
 export const clearAllStudentRecords = async (req, res) => {
   try {

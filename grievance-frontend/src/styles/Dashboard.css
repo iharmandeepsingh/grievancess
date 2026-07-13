@@ -1,4 +1,4 @@
-﻿/* ============ GLOBAL VARIABLES & THEME ============ */
+/* ============ GLOBAL VARIABLES & THEME ============ */
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 
 :root {
@@ -170,6 +170,37 @@ body {
 /* Hide the bottom border from base style override */
 .navbar li a {
   border-bottom: none !important;
+}
+
+/* Custom Line-style Navigation Links */
+.navbar li .nav-line-link {
+  display: block;
+  padding: 10px 15px;
+  color: #64748b !important;
+  font-weight: 500;
+  text-decoration: none;
+  background: transparent !important;
+  border-bottom: 2px solid transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.navbar li:hover .nav-line-link,
+.navbar li .nav-line-link:hover {
+  color: #2563eb !important;
+  border-bottom: 2px solid #2563eb !important;
+  background: transparent !important;
+}
+
+.navbar li.active .nav-line-link {
+  color: #2563eb !important;
+  font-weight: 600 !important;
+  border-bottom: 2px solid #2563eb !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: translateY(0) !important;
 }
 
 /* ============ MAIN CONTENT AREA ============ */
@@ -428,6 +459,8 @@ textarea:focus {
 /* Enhancing Existing Table */
 .table-container {
   overflow-x: auto;
+  overflow-y: auto;
+  max-height: 65vh;
   -webkit-overflow-scrolling: touch;
   border-radius: var(--radius-lg);
   border: 1px solid #e2e8f0;
@@ -454,6 +487,9 @@ textarea:focus {
   /* Reduced padding */
   text-align: left;
   border-bottom: 1px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .grievance-table td {
@@ -465,6 +501,46 @@ textarea:focus {
 }
 
 .grievance-table tr:hover td {
+  background: #f8fafc;
+}
+
+/* Sticky first column */
+.grievance-table th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 12;
+  border-right: 1px solid #e2e8f0;
+}
+
+.grievance-table td:first-child {
+  position: sticky;
+  left: 0;
+  background: white;
+  z-index: 5;
+  border-right: 1px solid #e2e8f0;
+}
+
+.grievance-table tr:hover td:first-child {
+  background: #f8fafc;
+}
+
+/* Sticky last column (Actions) */
+.grievance-table th:last-child {
+  position: sticky;
+  right: 0;
+  z-index: 12;
+  border-left: 1px solid #e2e8f0;
+}
+
+.grievance-table td:last-child {
+  position: sticky;
+  right: 0;
+  background: white;
+  z-index: 5;
+  border-left: 1px solid #e2e8f0;
+}
+
+.grievance-table tr:hover td:last-child {
   background: #f8fafc;
 }
 

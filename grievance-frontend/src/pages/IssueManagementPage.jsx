@@ -59,6 +59,11 @@ function IssueManagementPage() {
               Routing Rules
             </button>
           </li>
+          <li style={{ marginLeft: 'auto' }}>
+            <button onClick={() => navigate(-1)} className="tab-link-button">
+              ⬅ Back
+            </button>
+          </li>
         </ul>
       </nav>
 
