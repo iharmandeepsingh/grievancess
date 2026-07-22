@@ -9,7 +9,6 @@ import jwt from "jsonwebtoken";
 import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
-import os from "os";
 import nodemailer from "nodemailer";
 import { Readable } from "stream";
 import xlsx from "xlsx";
@@ -143,7 +142,7 @@ global.logOTP = (type, email, otp, phone = null) => {
 // ✅ STORAGE ENGINE (Disk Storage for file management)
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadsDir = process.env.VERCEL ? os.tmpdir() : path.join(__dirname, 'uploads');
+    const uploadsDir = path.join(__dirname, 'uploads');
     if (!fs.existsSync(uploadsDir)) {
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
@@ -869,8 +868,4 @@ app.get("/", (req, res) => res.send("✅ Backend Running"));
 
 
 const PORT = process.env.PORT || 5000;
-if (!process.env.VERCEL) {
-  app.listen(PORT, () => console.log(`🚀 Server: http://localhost:${PORT}`));
-}
-
-export default app;
+app.listen(PORT, () => console.log(`🚀 Server: http://localhost:${PORT}`));
